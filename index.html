@@ -85,7 +85,7 @@
   <div class="row" style="margin-top:12px">
     <div class="field" style="flex:0 0 auto;min-width:200px;max-width:240px">
       <label>年终奖（元）</label>
-      <input type="number" id="bonus" placeholder="如无可留空" min="0">
+      <input type="number" id="bonus" placeholder="如无可留空" min="0" autocomplete="off">
     </div>
   </div>
   <div class="tip">社保基数自动限制在平均工资60%～300%之间；如手动填写基数，将覆盖自动计算。年终奖按“全年一次性奖金”单独计税。</div>
@@ -206,8 +206,8 @@ function calcBonus(bonus){
   return {tax:0,rate:0,net:0};
 }
 
-// 月税前工资属于本次计算数据，不写入本地缓存；其余配置继续保留
-const ids=['avgSalary','baseOverride','gjjRate','bonus'];
+// 月税前工资和年终奖属于本次计算数据，不写入本地缓存；其余配置继续保留
+const ids=['avgSalary','baseOverride','gjjRate'];
 const cids=[1,2,3,4,5,6,7];
 const CACHE_VERSION='2026-09-13-deductions-v2';
 
@@ -345,8 +345,9 @@ function calc(){
 document.getElementById('avgSalary').value=12577;
 document.getElementById('gjjRate').value=7;
 const cachedData=load();
-// 工资始终作为一次性输入，不采用浏览器或旧缓存恢复的值
+// 工资和年终奖始终作为一次性输入，不采用浏览器或旧缓存恢复的值
 document.getElementById('salary').value='';
+document.getElementById('bonus').value='';
 // 迁移：如果缓存里还是旧的平均工资默认值（或为空），纠正为最新值
 const avgEl=document.getElementById('avgSalary');
 if(!avgEl.value || avgEl.value==='12434'){
@@ -381,9 +382,10 @@ calc();
   calc();
 }));
 
-// 返回页面或浏览器恢复表单状态时，也强制以空工资重新计算
+// 返回页面或浏览器恢复表单状态时，也强制清空工资和年终奖后重新计算
 window.addEventListener('pageshow',()=>{
   document.getElementById('salary').value='';
+  document.getElementById('bonus').value='';
   calc();
 });
 </script>

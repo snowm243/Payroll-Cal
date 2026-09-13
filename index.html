@@ -23,7 +23,6 @@
   .check-item input[type=checkbox]{width:15px;height:15px;accent-color:#3182ce;cursor:pointer;flex-shrink:0}
   .check-item label{font-size:13px;color:#4a5568;cursor:pointer;flex:1;margin:0}
   .check-item input[type=number]{width:80px;flex-shrink:0;font-size:13px;padding:4px 6px}
-  .check-item input.medical-input{width:128px;font-size:12px;background:#fffdf7;border-color:#f6d79c}
   .deduction-note{margin-top:10px;padding:9px 11px;border-left:3px solid #90cdf4;border-radius:6px;background:#f7fbff;color:#718096;font-size:11px;line-height:1.6}
   .summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
   .sum-box{background:#ebf8ff;border-radius:8px;padding:12px;text-align:center}
@@ -106,7 +105,7 @@
     </div>
     <div class="check-item">
       <input type="checkbox" id="c3"> <label for="c3">大病医疗（据实）</label>
-      <input type="number" id="v3" class="medical-input" placeholder="超1.5万元部分÷12" title="医保目录内个人自付超过15000元的部分，年度最高扣除80000元；此处请填写折算后的每月扣除额" min="0">
+      <input type="number" id="v3" value="0" min="0">
     </div>
     <div class="check-item">
       <input type="checkbox" id="c4"> <label for="c4">住房贷款利息</label>
@@ -346,14 +345,15 @@ const avgEl=document.getElementById('avgSalary');
 if(!avgEl.value || avgEl.value==='12434'){
   avgEl.value=12577;
 }
-// 迁移未启用项目的旧默认值；已启用项目可能是用户的实际分摊额，予以保留
-[['c1','v1','1000','2000'],['c6','v6','2000','3000'],['c7','v7','1000','2000']].forEach(([cid,vid,oldVal,newVal])=>{
+// 迁移未启用项目的旧默认值；已启用的子女项目可能是用户的实际分摊额，予以保留
+[['c1','v1','1000','2000'],['c7','v7','1000','2000']].forEach(([cid,vid,oldVal,newVal])=>{
   const checkbox=document.getElementById(cid);
   const input=document.getElementById(vid);
   if(!checkbox.checked && input.value===oldVal) input.value=newVal;
 });
-const medicalEl=document.getElementById('v3');
-if(medicalEl.value==='0') medicalEl.value='';
+// 赡养老人的 2000 元属于旧政策标准，包含已勾选的旧缓存也统一升级
+const elderlyEl=document.getElementById('v6');
+if(elderlyEl.value==='2000') elderlyEl.value='3000';
 
 const housingLoan=document.getElementById('c4');
 const housingRent=document.getElementById('c5');

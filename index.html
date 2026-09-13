@@ -56,7 +56,7 @@
 <div class="header">
   <div class="container" style="padding:0 12px">
     <h1>🏙️ 上海工资计算器</h1>
-    <div class="sub">个人所得税累计预扣法 · 2024年最新税率 &nbsp;作者 Sandy</div>
+    <div class="sub">个人所得税累计预扣法 · 2024年最新税率</div>
   </div>
 </div>
 <div class="container">
@@ -206,7 +206,8 @@ function calcBonus(bonus){
   return {tax:0,rate:0,net:0};
 }
 
-const ids=['salary','avgSalary','baseOverride','gjjRate','bonus'];
+// 月税前工资属于本次计算数据，不写入本地缓存；其余配置继续保留
+const ids=['avgSalary','baseOverride','gjjRate','bonus'];
 const cids=[1,2,3,4,5,6,7];
 
 function save(){
@@ -258,7 +259,9 @@ function getShownMonths(){
 function fmt(n){return n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 function calc(){
-  const salary=parseFloat(document.getElementById('salary').value)||0;
+  const salaryEl=document.getElementById('salary');
+  const salary=parseFloat(salaryEl.value)||0;
+  const hasSalary=salaryEl.value.trim()!=='' && salary>0;
   const avg=parseFloat(document.getElementById('avgSalary').value)||11396;
   const gjjRate=(parseFloat(document.getElementById('gjjRate').value)||7)/100;
   const baseOverride=parseFloat(document.getElementById('baseOverride').value)||0;
@@ -267,13 +270,13 @@ function calc(){
   // Social insurance base: auto-fill with salary, capped at 300%
   const baseMax=37731;
   const baseMin=7546;
-  const autoBase=Math.max(Math.min(salary,baseMax),baseMin);
+  const autoBase=hasSalary?Math.max(Math.min(salary,baseMax),baseMin):0;
   let base;
   if(document.getElementById('baseOverride').dataset.manual==='1'){
     base=baseOverride>0?baseOverride:autoBase;
   } else {
     base=autoBase;
-    document.getElementById('baseOverride').value=base;
+    document.getElementById('baseOverride').value=hasSalary?base:'';
   }
 
   // Individual social insurance rates

@@ -23,6 +23,8 @@
   .check-item input[type=checkbox]{width:15px;height:15px;accent-color:#3182ce;cursor:pointer;flex-shrink:0}
   .check-item label{font-size:13px;color:#4a5568;cursor:pointer;flex:1;margin:0}
   .check-item input[type=number]{width:80px;flex-shrink:0;font-size:13px;padding:4px 6px}
+  .check-item input.medical-input{width:128px;font-size:12px;background:#fffdf7;border-color:#f6d79c}
+  .deduction-note{margin-top:10px;padding:9px 11px;border-left:3px solid #90cdf4;border-radius:6px;background:#f7fbff;color:#718096;font-size:11px;line-height:1.6}
   .summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
   .sum-box{background:#ebf8ff;border-radius:8px;padding:12px;text-align:center}
   .sum-box.green{background:#f0fff4}
@@ -96,7 +98,7 @@
   <div class="checkbox-grid">
     <div class="check-item">
       <input type="checkbox" id="c1"> <label for="c1">子女教育</label>
-      <input type="number" id="v1" value="1000" min="0">
+      <input type="number" id="v1" value="2000" min="0">
     </div>
     <div class="check-item">
       <input type="checkbox" id="c2"> <label for="c2">继续教育</label>
@@ -104,7 +106,7 @@
     </div>
     <div class="check-item">
       <input type="checkbox" id="c3"> <label for="c3">大病医疗（据实）</label>
-      <input type="number" id="v3" value="0" min="0">
+      <input type="number" id="v3" class="medical-input" placeholder="超1.5万元部分÷12" title="医保目录内个人自付超过15000元的部分，年度最高扣除80000元；此处请填写折算后的每月扣除额" min="0">
     </div>
     <div class="check-item">
       <input type="checkbox" id="c4"> <label for="c4">住房贷款利息</label>
@@ -116,13 +118,14 @@
     </div>
     <div class="check-item">
       <input type="checkbox" id="c6"> <label for="c6">赡养老人</label>
-      <input type="number" id="v6" value="2000" min="0">
+      <input type="number" id="v6" value="3000" min="0">
     </div>
     <div class="check-item">
       <input type="checkbox" id="c7"> <label for="c7">3岁以下婴幼儿照护</label>
-      <input type="number" id="v7" value="1000" min="0">
+      <input type="number" id="v7" value="2000" min="0">
     </div>
   </div>
+  <div class="deduction-note">提示：以上金额均可按本人实际可扣除额修改。继续教育默认按学历（学位）教育 400 元/月；职业资格继续教育为取得证书当年 3600 元。</div>
 </div>
 
 <!-- 月度明细 -->
@@ -343,13 +346,33 @@ const avgEl=document.getElementById('avgSalary');
 if(!avgEl.value || avgEl.value==='12434'){
   avgEl.value=12577;
 }
-  buildMonthSelect();
+// 迁移未启用项目的旧默认值；已启用项目可能是用户的实际分摊额，予以保留
+[['c1','v1','1000','2000'],['c6','v6','2000','3000'],['c7','v7','1000','2000']].forEach(([cid,vid,oldVal,newVal])=>{
+  const checkbox=document.getElementById(cid);
+  const input=document.getElementById(vid);
+  if(!checkbox.checked && input.value===oldVal) input.value=newVal;
+});
+const medicalEl=document.getElementById('v3');
+if(medicalEl.value==='0') medicalEl.value='';
+
+const housingLoan=document.getElementById('c4');
+const housingRent=document.getElementById('c5');
+function enforceHousingExclusion(changed){
+  if(changed===housingLoan && housingLoan.checked) housingRent.checked=false;
+  if(changed===housingRent && housingRent.checked) housingLoan.checked=false;
+}
+// 旧缓存中如两项同时选中，优先保留住房贷款利息
+if(housingLoan.checked && housingRent.checked) housingRent.checked=false;
+
+buildMonthSelect();
 calc();
 
 // Events
-[...document.querySelectorAll('input')].forEach(el=>el.addEventListener('input',calc));
+[...document.querySelectorAll('input')].forEach(el=>el.addEventListener('input',()=>{
+  enforceHousingExclusion(el);
+  calc();
+}));
 </script>
 </body>
 </html>
-
 

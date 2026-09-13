@@ -67,7 +67,7 @@
   <div class="row">
     <div class="field">
       <label>月税前工资（元）</label>
-      <input type="number" id="salary" placeholder="如 20000" min="0">
+      <input type="number" id="salary" placeholder="如 20000" min="0" autocomplete="off">
     </div>
     <div class="field">
       <label>上海月平均工资（元）</label>
@@ -117,7 +117,7 @@
     </div>
     <div class="check-item">
       <input type="checkbox" id="c6"> <label for="c6">赡养老人</label>
-      <input type="number" id="v6" value="3000" min="0">
+      <input type="number" id="v6" value="1500" min="0">
     </div>
     <div class="check-item">
       <input type="checkbox" id="c7"> <label for="c7">3岁以下婴幼儿照护</label>
@@ -209,9 +209,10 @@ function calcBonus(bonus){
 // 月税前工资属于本次计算数据，不写入本地缓存；其余配置继续保留
 const ids=['avgSalary','baseOverride','gjjRate','bonus'];
 const cids=[1,2,3,4,5,6,7];
+const CACHE_VERSION='2026-09-13-deductions-v2';
 
 function save(){
-  const d={};
+  const d={cacheVersion:CACHE_VERSION};
   ids.forEach(i=>d[i]=document.getElementById(i).value);
   cids.forEach(i=>{
     d['c'+i]=document.getElementById('c'+i).checked;
@@ -223,14 +224,15 @@ function save(){
 function load(){
   try{
     const raw=localStorage.getItem('sh_salary_calc');
-    if(!raw) return;
+    if(!raw) return null;
     const d=JSON.parse(raw);
     ids.forEach(i=>{if(d[i]!==undefined)document.getElementById(i).value=d[i];});
     cids.forEach(i=>{
       if(d['c'+i]!==undefined)document.getElementById('c'+i).checked=d['c'+i];
       if(d['v'+i]!==undefined)document.getElementById('v'+i).value=d['v'+i];
     });
-  }catch(e){}
+    return d;
+  }catch(e){return null;}
 }
 
 function getSpecial(){
@@ -342,21 +344,24 @@ function calc(){
 // Init
 document.getElementById('avgSalary').value=12577;
 document.getElementById('gjjRate').value=7;
-load();
+const cachedData=load();
+// 工资始终作为一次性输入，不采用浏览器或旧缓存恢复的值
+document.getElementById('salary').value='';
 // 迁移：如果缓存里还是旧的平均工资默认值（或为空），纠正为最新值
 const avgEl=document.getElementById('avgSalary');
 if(!avgEl.value || avgEl.value==='12434'){
   avgEl.value=12577;
 }
-// 迁移未启用项目的旧默认值；已启用的子女项目可能是用户的实际分摊额，予以保留
-[['c1','v1','1000','2000'],['c7','v7','1000','2000']].forEach(([cid,vid,oldVal,newVal])=>{
-  const checkbox=document.getElementById(cid);
-  const input=document.getElementById(vid);
-  if(!checkbox.checked && input.value===oldVal) input.value=newVal;
-});
-// 赡养老人的 2000 元属于旧政策标准，包含已勾选的旧缓存也统一升级
+// 旧缓存只迁移一次；以后继续尊重用户自行输入的金额
 const elderlyEl=document.getElementById('v6');
-if(elderlyEl.value==='2000') elderlyEl.value='3000';
+if(!cachedData || cachedData.cacheVersion!==CACHE_VERSION){
+  [['c1','v1','1000','2000'],['c7','v7','1000','2000']].forEach(([cid,vid,oldVal,newVal])=>{
+    const checkbox=document.getElementById(cid);
+    const input=document.getElementById(vid);
+    if(!checkbox.checked && input.value===oldVal) input.value=newVal;
+  });
+  if(['1000','2000','3000'].includes(elderlyEl.value)) elderlyEl.value='1500';
+}
 
 const housingLoan=document.getElementById('c4');
 const housingRent=document.getElementById('c5');
@@ -375,6 +380,12 @@ calc();
   enforceHousingExclusion(el);
   calc();
 }));
+
+// 返回页面或浏览器恢复表单状态时，也强制以空工资重新计算
+window.addEventListener('pageshow',()=>{
+  document.getElementById('salary').value='';
+  calc();
+});
 </script>
 </body>
 </html>
